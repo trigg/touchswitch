@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="touchswitch">
+		<_short>Touch Switcher</_short>
+		<_long>A touch based window switcher.</_long>
+		<category>Window Management</category>
+		<group>
+			<_short>Behavior</_short>
+			<option name="activate" type="activator">
+				<_short>Enable to switcher</_short>
+				<_long>Starts the switcher</_long>
+				<default>edge-swipe up 1</default>
+			</option>
+			<option name="duration" type="animation">
+				<_short>Animation Transition Time</_short>
+				<_long>Time it takes for views to transition. Units are in milliseconds.</_long>
+				<default>750ms</default>
+				<min>0</min>
+			</option>
+			<option name="allow_zoom" type="bool">
+				<_short>Allow Zoomed Views</_short>
+				<_long>Whether scaled views can have a size larger than their original size.</_long>
+				<default>false</default>
+			</option>
+			<option name="minimize_others" type="bool">
+				<_short>Minimize Other Windows</_short>
+				<_long>When selecting a window minimize all others</_long>
+				<default>false</default>
+			</option>
+			<option name="pull_up" type="string">
+				<_short>Pull up action</_short>
+				<_long>The action to perform when pulling a window upwards in the switcher</_long>
+				<default>close</default>
+				<desc>
+					<value>close</value>
+					<_name>Close Window</_name>
+				</desc>
+				<desc>
+					<value>minimize</value>
+					<_name>Minimize Window</_name>
+				</desc>
+				<desc>
+					<value>nothing</value>
+					<_name>Nothing</_name>
+				</desc>
+			</option>
+			<option name="pull_down" type="string">
+				<_short>Pull down action</_short>
+				<_long>The action to perform when pulling a window downwards in the switcher</_long>
+				<default>nothing</default>
+				<desc>
+					<value>close</value>
+					<_name>Close Window</_name>
+				</desc>
+				<desc>
+					<value>minimize</value>
+					<_name>Minimize Window</_name>
+				</desc>
+				<desc>
+					<value>nothing</value>
+					<_name>Nothing</_name>
+				</desc>
+			</option>
+			<option name="background_touch" type="string">
+				<_short>Background touch action</_short>
+				<_long>The action to perform if the user presses the background</_long>
+				<default>showdesktop</default>
+				<desc>
+					<value>showdesktop</value>
+					<_name>Show Desktop</_name>
+				</desc>
+				<desc>
+					<value>ignore</value>
+					<_name>Stay in Touch Switch</_name>
+				</desc>
+				<desc>
+					<value>close</value>
+					<_name>Close Touch Switch</_name>
+				</desc>
+			</option>
+		</group>
+		<group>
+			<_short>Appearance</_short>
+			<option name="window_scale" type="double">
+				<_short>Window Scale</_short>
+				<_long>Percentage of the screen each window should take in the switcher</_long>
+				<default>0.70</default>
+				<min>0.1</min>
+				<max>0.8</max>
+				<precision>0.05</precision>
+			</option>
+			<option name="spacing" type="int">
+				<_short>Spacing</_short>
+				<_long>Sets the spacing between the views.</_long>
+				<default>50</default>
+				<min>0</min>
+			</option>
+			<option name="title_overlay" type="string">
+				<_short>Show views' title</_short>
+				<_long>Whether to display the title of each view as an overlay.</_long>
+				<default>all</default>
+				<desc>
+					<value>never</value>
+					<_name>Never</_name>
+				</desc>
+				<desc>
+					<value>all</value>
+					<_name>For all views</_name>
+				</desc>
+			</option>
+			<option name="title_font_size" type="int">
+				<_short>Font size for title</_short>
+				<_long>Size of font used to display an overlay of each view's title.</_long>
+				<default>16</default>
+			</option>
+			<option name="title_position" type="string">
+				<_short>Position for title</_short>
+				<_long>Position for overlays of views' titles when shown.</_long>
+				<default>top</default>
+				<desc>
+					<value>top</value>
+					<_name>Top</_name>
+				</desc>
+				<desc>
+					<value>center</value>
+					<_name>Center</_name>
+				</desc>
+				<desc>
+					<value>bottom</value>
+					<_name>Bottom</_name>
+				</desc>
+			</option>
+			<option name="bg_color" type="color">
+				<_short>Background color</_short>
+				<_long>Background color for title overlay text.</_long>
+				<default>0.0 0.0 0.0 0.9</default>
+			</option>
+			<option name="text_color" type="color">
+				<_short>Text color</_short>
+				<_long>Text color for title overlay.</_long>
+				<default>0.8 0.8 0.8 1.0</default>
+			</option>
+		</group>
+	</plugin>
+</wayfire>
