@@ -13,10 +13,12 @@ project(
 
 add_project_arguments(['-DWLR_USE_UNSTABLE'], language: ['cpp', 'c'])
 add_project_arguments(['-DWAYFIRE_PLUGIN'], language: ['cpp', 'c'])
-add_project_link_arguments(['-rdynamic','-fPIC'], language:'cpp')
+add_project_link_arguments(['-rdynamic', '-fPIC'], language: 'cpp')
 
 wayfire = dependency('wayfire', version: '>=0.11.0')
-glm    = dependency('glm')
+glm = dependency('glm')
+rsvg = dependency('librsvg-2.0')
+cairo = dependency('cairo')
 
 subdir('src')
 subdir('metadata')

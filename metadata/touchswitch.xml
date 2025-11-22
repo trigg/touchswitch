@@ -108,6 +108,11 @@
 					<_name>For all views</_name>
 				</desc>
 			</option>
+			<option name="icon_overlay" type="bool">
+				<_short>Show Icons</_short>
+				<_long>Show window icons in switcher</_long>
+				<default>true</default>
+			</option>
 			<option name="title_font_size" type="int">
 				<_short>Font size for title</_short>
 				<_long>Size of font used to display an overlay of each view's title.</_long>
@@ -116,7 +121,11 @@
 			<option name="title_position" type="string">
 				<_short>Position for title</_short>
 				<_long>Position for overlays of views' titles when shown.</_long>
-				<default>top</default>
+				<default>below</default>
+				<desc>
+					<value>above</value>
+					<_name>Above</_name>
+				</desc>
 				<desc>
 					<value>top</value>
 					<_name>Top</_name>
@@ -129,6 +138,42 @@
 					<value>bottom</value>
 					<_name>Bottom</_name>
 				</desc>
+				<desc>
+					<value>below</value>
+					<_name>Below</_name>
+				</desc>
+			</option>
+			<option name="icon_position" type="string">
+				<_short>Icon position</_short>
+				<_long>Position of icon of view in switcher</_long>
+				<default>above</default>
+				<desc>
+					<value>above</value>
+					<_name>Above</_name>
+				</desc>
+				<desc>
+					<value>top</value>
+					<_name>Top</_name>
+				</desc>
+				<desc>
+					<value>center</value>
+					<_name>Center</_name>
+				</desc>
+				<desc>
+					<value>bottom</value>
+					<_name>Bottom</_name>
+				</desc>
+				<desc>
+					<value>below</value>
+					<_name>Below</_name>
+				</desc>
+			</option>
+			<option name="icon_size" type="int">
+				<_short>Icon Size</_short>
+				<_long>Size in pixels of icons shown in switcher</_long>
+				<default>128</default>
+				<min>32</min>
+				<max>512</max>
 			</option>
 			<option name="bg_color" type="color">
 				<_short>Background color</_short>
@@ -139,6 +184,11 @@
 				<_short>Text color</_short>
 				<_long>Text color for title overlay.</_long>
 				<default>0.8 0.8 0.8 1.0</default>
+			</option>
+			<option name="icon_theme" type="string">
+				<_short>Icon Theme</_short>
+				<_long>Prefered Theme for icons shown in switcher</_long>
+				<default>Papirus</default>
 			</option>
 		</group>
 	</plugin>

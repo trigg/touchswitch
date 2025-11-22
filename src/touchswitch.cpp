@@ -27,6 +27,7 @@
 #include "wayfire/plugins/ipc/ipc-activator.hpp"
 #include "touchswitch.hpp"
 #include "touchswitch-title-overlay.hpp"
+#include "touchswitch-icon-overlay.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
 #include "wayfire/plugin.hpp"
@@ -86,6 +87,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
 {
     /* helper class for optionally showing title overlays */
     touchswitch_show_title_t show_title;
+    touchswitch_show_icon_t show_icon;
     bool hook_set;
     bool touch_held;
     bool travelled = false;
@@ -132,6 +134,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
 
 
         show_title.init(output);
+        show_icon.init(output);
         output->connect(&update_cb);
     }
 
@@ -527,7 +530,6 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         auto view = get_current_view();
         if (view)
         {
-            //wf::get_core().default_wm->focus_raise_view(view);
             layout_slots(get_views());
         }
     }
@@ -1081,6 +1083,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     {
         finalize();
         show_title.fini();
+        show_icon.fini();
     }
 };
 

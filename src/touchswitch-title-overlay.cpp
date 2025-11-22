@@ -74,9 +74,11 @@ class touchswitch_overlay_node_t : public node_t
   public:
     enum class position
     {
+        ABOVE,
         TOP,
         CENTER,
         BOTTOM,
+        BELOW,
     };
 
     /* save the transformed view, since we need it in the destructor */
@@ -209,6 +211,10 @@ class touchswitch_overlay_node_t : public node_t
         geometry.x = bbox.x + bbox.width / 2 - geometry.width / 2;
         switch (pos)
         {
+          case position::ABOVE:
+            geometry.y = bbox.y - geometry.height;
+            break;
+
           case position::TOP:
             geometry.y = bbox.y;
             break;
@@ -219,6 +225,10 @@ class touchswitch_overlay_node_t : public node_t
 
           case position::BOTTOM:
             geometry.y = bbox.y + bbox.height - geometry.height / 2;
+            break;
+        
+          case position::BELOW:
+            geometry.y = bbox.y + bbox.height;
             break;
         }
 
@@ -303,7 +313,7 @@ class touchswitch_overlay_render_instance_t : public render_instance_t
             return;
         }
 
-        // We want to render ourselves only, the node does not have children
+        /* We want to render ourselves only, the node does not have children */
         instructions.push_back(render_instruction_t{
                     .instance = this,
                     .target   = target,
@@ -369,6 +379,12 @@ add_title_overlay{[this] (touchswitch_transformer_added_signal *signal)
         } else if (pos_opt == "bottom")
         {
             pos = touchswitch_overlay_node_t::position::BOTTOM;
+        } else if (pos_opt == "below")
+        {
+            pos = touchswitch_overlay_node_t::position::BELOW;
+        } else if (pos_opt == "above")
+        {
+            pos = touchswitch_overlay_node_t::position::ABOVE;
         }
 
         auto tr     = signal->view->get_transformed_node()->get_transformer(TOUCHSWITCH_TRANSFORMER);
