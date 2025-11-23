@@ -23,7 +23,7 @@ class touchswitch_show_title_t
     /* Overlays for showing the title of each view */
     wf::option_wrapper_t<wf::color_t> bg_color{"touchswitch/bg_color"};
     wf::option_wrapper_t<wf::color_t> text_color{"touchswitch/text_color"};
-    wf::option_wrapper_t<std::string> show_view_title_overlay_opt{
+    wf::option_wrapper_t<bool> show_view_title_overlay_opt{
         "touchswitch/title_overlay"};
     wf::option_wrapper_t<int> title_font_size{"touchswitch/title_font_size"};
     wf::option_wrapper_t<std::string> title_position{"touchswitch/title_position"};

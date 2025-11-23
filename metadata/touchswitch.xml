@@ -106,18 +106,10 @@
 				<default>50</default>
 				<min>0</min>
 			</option>
-			<option name="title_overlay" type="string">
+			<option name="title_overlay" type="bool">
 				<_short>Show views' title</_short>
 				<_long>Whether to display the title of each view as an overlay.</_long>
-				<default>all</default>
-				<desc>
-					<value>never</value>
-					<_name>Never</_name>
-				</desc>
-				<desc>
-					<value>all</value>
-					<_name>For all views</_name>
-				</desc>
+				<default>true</default>
 			</option>
 			<option name="icon_overlay" type="bool">
 				<_short>Show Icons</_short>

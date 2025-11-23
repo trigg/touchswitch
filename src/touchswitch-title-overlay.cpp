@@ -362,8 +362,7 @@ touchswitch_show_title_t::touchswitch_show_title_t() :
 
 add_title_overlay{[this] (touchswitch_transformer_added_signal *signal)
     {
-        const std::string& opt = show_view_title_overlay_opt;
-        if (opt == "never")
+        if (!show_view_title_overlay_opt)
         {
             /* TODO: support changing this option while scale is running! */
             return;
@@ -435,8 +434,7 @@ void touchswitch_show_title_t::fini()
 
 void touchswitch_show_title_t::update_title_overlay_opt()
 {
-    const std::string& tmp = show_view_title_overlay_opt;
-    if (tmp == "all")
+    if (show_view_title_overlay_opt)
     {
         show_view_title_overlay = title_overlay_t::ALL;
     } else
