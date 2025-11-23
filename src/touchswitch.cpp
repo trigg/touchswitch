@@ -85,18 +85,26 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     public wf::pointer_interaction_t,
     public wf::touch_interaction_t
 {
+    enum class swipe_direction_option
+    {
+        UNDECIDED,
+        VERTICAL,
+        HORIZONTAL,
+    };
     /* helper class for optionally showing title overlays */
     touchswitch_show_title_t show_title;
     touchswitch_show_icon_t show_icon;
     bool hook_set;
     bool touch_held;
+    uint32_t flick_timestamp = 0;
     bool travelled = false;
-    wf::pointf_t last_touch, start_touch;
+    wf::pointf_t last_touch, start_touch, start_flick, velocity;
     double touch_x_offset = std::numeric_limits<double>::quiet_NaN();
     double touch_y_offset = 0.0;
     /* View over which the last input press happened */
     wayfire_toplevel_view last_selected_view;
     std::map<wayfire_toplevel_view, view_scale_data> scale_data;
+    swipe_direction_option swipe_direction=swipe_direction_option::UNDECIDED;
     wf::option_wrapper_t<int> spacing{"touchswitch/spacing"};
     wf::option_wrapper_t<bool> allow_scale_zoom{"touchswitch/allow_zoom"};
     wf::option_wrapper_t<double> window_scale{"touchswitch/window_scale"};
@@ -104,7 +112,11 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     wf::option_wrapper_t<std::string> up_action{"touchswitch/pull_up"};
     wf::option_wrapper_t<std::string> down_action{"touchswitch/pull_down"};
     wf::option_wrapper_t<std::string> background_action{"touchswitch/background_touch"};
+    wf::option_wrapper_t<double> flick_motion{"touchswitch/flick_motion"};
 
+    double velocity_threshold = 0.1; /* The point at which movement is considered stopped, and velocity is zeroed */
+    double flick_threshold_start = 50; /* The ammount of motion needed to start a flick gesture */
+    double flick_threshold_end = 20;
 
     /* maximum scale -- 1.0 means we will not "zoom in" on a view */
     const double max_scale_factor = 1.0;
@@ -136,6 +148,17 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         show_title.init(output);
         show_icon.init(output);
         output->connect(&update_cb);
+    }
+
+    /* Helper to end swipe velocity */
+    bool is_velocity_zero()
+    {
+        if (std::hypot(velocity.x, velocity.y) > velocity_threshold)
+        {
+            return false;
+        }
+        velocity = {0, 0};
+        return true;
     }
 
     /* Variant to create a transform for a fully shown window, animate from current location in scene*/
@@ -248,23 +271,23 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         const wlr_pointer_button_event& event) override
     {
         process_input(event.button, event.state,
-            wf::get_core().get_cursor_position());
+            wf::get_core().get_cursor_position(), event.time_msec);
     }
 
-    void handle_touch_down(uint32_t, int finger_id, wf::pointf_t pos) override
+    void handle_touch_down(uint32_t time, int finger_id, wf::pointf_t pos) override
     {
         if (finger_id == 0)
         {
-            process_input(BTN_LEFT, WLR_BUTTON_PRESSED, pos);
+            process_input(BTN_LEFT, WLR_BUTTON_PRESSED, pos, time);
         }
     }
 
-    void handle_touch_up(uint32_t, int finger_id,
+    void handle_touch_up(uint32_t time, int finger_id,
         wf::pointf_t lift_off_position) override
     {
         if (finger_id == 0)
         {
-            process_input(BTN_LEFT, WLR_BUTTON_RELEASED, lift_off_position);
+            process_input(BTN_LEFT, WLR_BUTTON_RELEASED, lift_off_position, time);
         }
     }
 
@@ -303,7 +326,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     }
 
     /* Process button event */
-    void process_input(uint32_t button, uint32_t state, wf::pointf_t input_position)
+    void process_input(uint32_t button, uint32_t state, wf::pointf_t input_position, uint32_t time)
     {
         if (!active)
         {
@@ -319,8 +342,11 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         /* If a button press or touch-start */
         if (state == WLR_BUTTON_PRESSED)
         {
+            swipe_direction = swipe_direction_option::UNDECIDED;
             travelled = false;
             touch_held = true;
+            velocity = {0, 0};
+            flick_timestamp = 0;
             auto view = touchswitch_find_view_at(input_position, output);
             if (view && should_scale_view(view))
             {
@@ -367,9 +393,30 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
                 }
                 /* TODO Consider logging unknown value */
             }
+            /* Try for velocity */
+            if (flick_timestamp > 0 && time > flick_timestamp)
+            {
+                uint32_t count_ms = time - flick_timestamp;
+                velocity = start_flick - input_position;
+                velocity = {velocity.x / (double)count_ms, velocity.y /(double)count_ms};
+            }
             /* Set touch settings to no-touch */
             touch_y_offset = 0.0;
-            touch_x_offset = std::round(touch_x_offset);
+            
+
+            /* Handle potential flick */
+            if(flick_timestamp==0)
+            {
+                touch_x_offset = std::round(touch_x_offset);
+            } else {
+                double flick_duration = time - flick_timestamp;
+                flick_timestamp = time;
+                velocity = input_position - start_flick;
+                velocity = {velocity.x /flick_duration, velocity.y / flick_duration};
+            }
+            start_flick = {0, 0};
+            last_touch = {0, 0};
+            start_touch = {0, 0};
 
             layout_slots(get_views());
             return;
@@ -398,6 +445,44 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         deactivate();
     }
 
+    /* Handle relative motion input. Should consider velocity of flick as well as mouse/touchscreen */
+    void handle_relative_motion(wf::pointf_t diff, uint32_t time)
+    {
+        /* These actions should be animated mutually exclusively. Only show the axis with larger difference */
+        if (swipe_direction == swipe_direction_option::VERTICAL)
+        {
+            /* Dragging up or down */
+            touch_y_offset += diff.y;
+            layout_slots(get_views());
+        } else if (swipe_direction == swipe_direction_option::HORIZONTAL)
+        {
+            /* Dragging left or right */
+            touch_y_offset = 0;
+            auto workarea = output->workarea->get_workarea();
+            const double scaled_width = std::max((double) workarea.width * window_scale, 1.0);
+            /* Account for index-width not screen or window width */
+            double motion_x = (diff.x) / (spacing + scaled_width);
+
+            touch_x_offset -= motion_x;
+
+            /* Force back into bounds if needed, also reset velocity if out of bounds */
+            auto views = get_views();
+            if (touch_x_offset < 0.0)
+            {
+                touch_x_offset = 0.0;
+                velocity = {0, 0};
+            } else if (touch_x_offset >= (double) (views.size() - 1))
+            {
+                touch_x_offset = (double) (views.size() - 1);
+                velocity = {0, 0};
+            }
+
+            layout_slots(views);
+        }
+
+    }
+
+    /* Handle motion input. Should only be mouse/touchscreen */
     void handle_pointer_motion(wf::pointf_t to_f, uint32_t time) override
     {
         if (!active)
@@ -413,44 +498,34 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
             travelled = true;
         }
         if (travelled){
-            auto diff = to_f - start_touch;
-
-            /* These actions should be animated mutually exclusively. Only show the axis with larger difference */
-            if (abs(diff.y) > abs(diff.x))
+            auto total_diff = to_f - start_touch;
+            auto diff = to_f - last_touch;
+            double total_distance = std::hypot(total_diff.x, total_diff.y);
+            /* Check if we've commited to a gesture */
+            if (swipe_direction == swipe_direction_option::UNDECIDED && total_distance > 50)
             {
-                /* Dragging up or down */
-                touch_y_offset = diff.y;
-                layout_slots(get_views());
-            } else
-            {
-                /* Dragging left or right */
-                touch_y_offset = 0;
-                auto workarea = output->workarea->get_workarea();
-                const double scaled_width = std::max((double)
-                workarea.width * window_scale, 1.0);
-                double motion_x = (to_f.x - last_touch.x) / (spacing + scaled_width);
-
-                last_touch = to_f;
-
-                touch_x_offset -= motion_x;
-                /* Switch focus as you move */
-                auto view = get_current_view();
-                if (view != nullptr)
+                if (abs(total_diff.y) > abs(total_diff.x))
                 {
-                    wf::get_core().seat->focus_view(view);
+                    swipe_direction = swipe_direction_option::VERTICAL;
+                } else
+                {
+                    swipe_direction = swipe_direction_option::HORIZONTAL;
                 }
-                auto views = get_views();
-
-                if (touch_x_offset < 0.0)
-                {
-                    touch_x_offset = 0.0;
-                } else if (touch_x_offset >= (double) (views.size() - 1))
-                {
-                    touch_x_offset = (double) (views.size() - 1) ;
-                }
-
-                layout_slots(views);
             }
+            double distance = std::hypot(diff.x, diff.y);
+            if(distance > flick_threshold_start && flick_timestamp == 0)
+            {
+                /* Flick started */
+                flick_timestamp = time;
+                start_flick = to_f;
+            } else if(distance <= flick_threshold_end)
+            {
+                /* Flick reset */
+                flick_timestamp = 0;
+                start_flick = {0,0};
+            }
+            handle_relative_motion(diff, time);
+            last_touch = to_f;
         }
     }
 
@@ -594,9 +669,9 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         double translation_x,
         double translation_y)
     {
-        /* If the user is actively dragging then set it directly.
+        /* If the user is actively dragging or flicking it then set it directly.
            Animating after the drag feels like really bad input lag */
-        if (touch_held){
+        if (touch_held || !is_velocity_zero()){
             view->get_transformed_node()->begin_transform_update();
             view_data.transformer->scale_x = scale_x;
             view_data.transformer->scale_y = scale_y;
@@ -877,7 +952,29 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     /* Keep rendering until all animation has finished */
     wf::effect_hook_t post_hook = [=] ()
     {
-        bool running = animation_running();
+        bool running = animation_running() || !is_velocity_zero();
+        if(!touch_held && !is_velocity_zero())
+        {
+            /* Apply friction */
+            velocity = {velocity.x * flick_motion, velocity.y * flick_motion};
+            if(is_velocity_zero())
+            {
+                /* Was moving, now isn't. */
+                touch_x_offset = std::round(touch_x_offset);
+                flick_timestamp = 0;
+                start_flick = {0, 0};
+                start_touch = {0, 0};
+                layout_slots(get_views());
+            } else
+            {
+                /* Count msec since last hook. Should be frame-length but let's not bet */
+                uint32_t current_time = wf::get_current_time();
+                double count_msec = current_time - flick_timestamp;
+                flick_timestamp = current_time;
+                wf::pointf_t movement = {velocity.x * count_msec, velocity.y * count_msec};
+                handle_relative_motion(movement, current_time);
+            }
+        }
 
         if (running)
         {

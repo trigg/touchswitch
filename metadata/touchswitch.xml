@@ -78,6 +78,17 @@
 					<_name>Close Touch Switch</_name>
 				</desc>
 			</option>
+			<option name="flick_motion" type="double">
+				<_short>Flick Speed</_short>
+				<_long>The rate at which motion comes to a stop after flicking. Higher continues on
+					for longer, 0 stops exactly where released. 1 or higher never stops unless
+					grabbed</_long>
+				<min>0</min>
+				<max>1.1</max>
+				<default>0.98</default>
+				<precision>0.01</precision>
+
+			</option>
 		</group>
 		<group>
 			<_short>Appearance</_short>
