@@ -113,9 +113,9 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     wf::option_wrapper_t<std::string> background_action{"touchswitch/background_touch"};
     wf::option_wrapper_t<double> flick_motion{"touchswitch/flick_motion"};
 
-    double velocity_threshold = 0.1; /* The point at which movement is considered stopped, and velocity is zeroed */
-    double flick_threshold_start = 50; /* The ammount of motion needed to start a flick gesture */
-    double flick_threshold_end = 20;
+    const double velocity_threshold = 0.1; /* The point at which movement is considered stopped, and velocity is zeroed */
+    const double flick_threshold_start = 50; /* The ammount of motion needed to start a flick gesture */
+    const double flick_threshold_end = 20;
 
     /* maximum scale -- 1.0 means we will not "zoom in" on a view */
     const double max_scale_factor = 1.0;
@@ -965,6 +965,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
             {
                 /* Was moving, now isn't. */
                 handle_window_swipe(); /* Account for actions on vertical swipe */
+                swipe_direction = swipe_direction_option::UNDECIDED;
                 touch_x_offset = std::round(touch_x_offset);
                 touch_y_offset = 0.0;
                 flick_timestamp = 0;

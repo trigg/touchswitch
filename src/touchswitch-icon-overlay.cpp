@@ -164,7 +164,7 @@ struct view_icon_texture_t : public wf::custom_data_t
 	    cairo_destroy(cr_rsvg);
 
         cairo_translate(cr, (double)icon_size / 2, (double)icon_size / 2);
-        cairo_scale(cr, 1.0, -1.0);
+        cairo_scale(cr, 1.0, 1.0);
         cairo_translate(cr, -(double)icon_size / 2, -(double)icon_size / 2);
 
         cairo_set_source_surface(cr, surface_rsvg, 0, 0);
