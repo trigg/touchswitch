@@ -4,11 +4,7 @@ A touch orientated switcher for wayfire
 
 
 
-https://github.com/user-attachments/assets/d6c20de3-d315-47dc-84ec-5c0d5d3c36ac
-
-
-
-https://github.com/user-attachments/assets/62c71b42-9d79-412c-9c9d-593a7ce89bc9
+https://github.com/user-attachments/assets/e742e858-d5f3-4246-b4f8-a03d6fa684e1
 
 
 
