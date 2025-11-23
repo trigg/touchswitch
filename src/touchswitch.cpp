@@ -97,7 +97,6 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     bool hook_set;
     bool touch_held;
     uint32_t flick_timestamp = 0;
-    bool travelled = false;
     wf::pointf_t last_touch, start_touch, start_flick, velocity;
     double touch_x_offset = std::numeric_limits<double>::quiet_NaN();
     double touch_y_offset = 0.0;
@@ -325,6 +324,46 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         }
     }
 
+    /* If in a vertical swipe or end of flick, action any user action here */
+    void handle_window_swipe()
+    {
+        /* Skip this if possible */
+        if (swipe_direction != swipe_direction_option::VERTICAL)
+        {
+            return;
+        }
+        /* Vertical swipe only works directly on a window */
+        if (last_selected_view == nullptr)
+        {
+            return;
+        }
+        auto workarea = output->workarea->get_workarea();
+        std::string action;
+
+        /* TODO User sensitivity? Currently swipe up or down 1/4 of the screen height */
+        if (abs(touch_y_offset) > (workarea.height  / 4.0))
+        {
+            if (touch_y_offset < 0)
+            {
+                action = up_action;
+            } else
+            {
+                action = down_action;
+            }
+        }
+        /* TODO other actions */
+        if (action == "close")
+        {
+            /* Set non-visible to avoid full-screen flicker of window as it dies */
+            wf::scene::set_node_enabled(last_selected_view->get_root_node(),false);
+            last_selected_view->close();
+        } else if (action == "minimize")
+        {
+            scale_data[last_selected_view].was_minimized = true;
+        }
+        /* TODO Consider logging unknown value */
+    }
+
     /* Process button event */
     void process_input(uint32_t button, uint32_t state, wf::pointf_t input_position, uint32_t time)
     {
@@ -343,7 +382,6 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         if (state == WLR_BUTTON_PRESSED)
         {
             swipe_direction = swipe_direction_option::UNDECIDED;
-            travelled = false;
             touch_held = true;
             velocity = {0, 0};
             flick_timestamp = 0;
@@ -363,36 +401,8 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         touch_held = false;
 
         /* Drag or touch left the dead zone */
-        if (travelled)
+        if (swipe_direction == swipe_direction_option::VERTICAL || swipe_direction == swipe_direction_option::HORIZONTAL)
         {
-            if (last_selected_view != nullptr)
-            {
-                auto workarea = output->workarea->get_workarea();
-                std::string action;
-
-                /* TODO User sensitivity? Currently swipe up or down 1/4 of the screen height */
-                if (abs(touch_y_offset) > (workarea.height  / 4.0))
-                {
-                    if (touch_y_offset < 0)
-                    {
-                        action = up_action;
-                    } else
-                    {
-                        action = down_action;
-                    }
-                }
-                /* TODO other actions */
-                if (action == "close")
-                {
-                    /* Set non-visible to avoid full-screen flicker of window as it dies */
-                    wf::scene::set_node_enabled(last_selected_view->get_root_node(),false);
-                    last_selected_view->close();
-                } else if (action == "minimize")
-                {
-                    scale_data[last_selected_view].was_minimized = true;
-                }
-                /* TODO Consider logging unknown value */
-            }
             /* Try for velocity */
             if (flick_timestamp > 0 && time > flick_timestamp)
             {
@@ -400,15 +410,15 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
                 velocity = start_flick - input_position;
                 velocity = {velocity.x / (double)count_ms, velocity.y /(double)count_ms};
             }
-            /* Set touch settings to no-touch */
-            touch_y_offset = 0.0;
-            
 
-            /* Handle potential flick */
             if(flick_timestamp==0)
             {
+                /* Touch ended and not registered as a flick */
                 touch_x_offset = std::round(touch_x_offset);
+                handle_window_swipe();
+                touch_y_offset = 0.0;
             } else {
+                /* Touch was a flick on release */
                 double flick_duration = time - flick_timestamp;
                 flick_timestamp = time;
                 velocity = input_position - start_flick;
@@ -421,13 +431,11 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
             layout_slots(get_views());
             return;
         }
-        
+        /* Didn't leave the dead zone, it is 'just' a touch */
         if (last_selected_view != nullptr)
         {
             /* Touch a window directly, switch now! */
             touch_x_offset = get_view_index(last_selected_view);
-            deactivate();
-            return;
         } else
         {
             /* Touched background, optional actions */
@@ -493,11 +501,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         {
             return;
         }
-        if (std::hypot(start_touch.x - to_f.x, start_touch.y - to_f.y) > 40.0)
-        {
-            travelled = true;
-        }
-        if (travelled){
+        if (std::hypot(start_touch.x - to_f.x, start_touch.y - to_f.y) > 40.0){
             auto total_diff = to_f - start_touch;
             auto diff = to_f - last_touch;
             double total_distance = std::hypot(total_diff.x, total_diff.y);
@@ -960,7 +964,9 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
             if(is_velocity_zero())
             {
                 /* Was moving, now isn't. */
+                handle_window_swipe(); /* Account for actions on vertical swipe */
                 touch_x_offset = std::round(touch_x_offset);
+                touch_y_offset = 0.0;
                 flick_timestamp = 0;
                 start_flick = {0, 0};
                 start_touch = {0, 0};
@@ -1014,8 +1020,8 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
             return false;
         }
 
-        travelled = false;
         touch_held = false;
+        swipe_direction = swipe_direction_option::UNDECIDED;
 
         wayfire_toplevel_view active_view = toplevel_cast(wf::get_active_view_for_output(output));
         if (active_view)
