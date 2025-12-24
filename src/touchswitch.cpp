@@ -960,8 +960,9 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
         if(!touch_held && !is_velocity_zero())
         {
             /* Apply friction */
+            auto workarea = output->workarea->get_workarea();
             velocity = {velocity.x * flick_motion, velocity.y * flick_motion};
-            if(is_velocity_zero())
+            if(is_velocity_zero() || abs(touch_y_offset) > (workarea.height  / 4.0))
             {
                 /* Was moving, now isn't. */
                 handle_window_swipe(); /* Account for actions on vertical swipe */
