@@ -18,4 +18,10 @@ $ ninja -C build
 # ninja -C build install
 ```
 
-Restart wayfire.
+Add to the config 
+```
+[core]
+...
+plugins = ... touchswitch
+```
+
