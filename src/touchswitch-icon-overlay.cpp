@@ -476,7 +476,7 @@ class touchswitch_icon_overlay_render_instance_t : public render_instance_t
     void render(const wf::scene::render_instruction_t& data) override
     {
         auto& icon = *self->view->get_data<view_icon_texture_t>();
-        if (! icon.button_texture.get_texture().texture)
+        if (! icon.button_texture.get_texture())
         {
             LOGE("Null texture");
             return;
