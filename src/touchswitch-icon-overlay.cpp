@@ -1,4 +1,3 @@
-#include "touchswitch.hpp"
 #include "touchswitch-icon-overlay.hpp"
 #include "wayfire/core.hpp"
 #include "wayfire/debug.hpp"
@@ -28,7 +27,7 @@ static constexpr const char *TOUCHSWITCH_TRANSFORMER = "touchswitch";
  */
 struct view_icon_texture_t : public wf::custom_data_t
 {
-    std::string cached_app_id="";
+    std::string cached_app_id = "";
     wayfire_toplevel_view view;
     wayfire_toplevel_view dialog; /* the texture should be rendered on top of this dialog */
     wf::owned_texture_t button_texture;
@@ -36,22 +35,22 @@ struct view_icon_texture_t : public wf::custom_data_t
     wf::option_wrapper_t<std::string> theme_choice{"touchswitch/icon_theme"};
 
     /* Helper function to check a file exists */
-    bool exists( std::string path ) 
+    bool exists(std::string path)
     {
         struct stat statbuf;
-        if ( stat( path.c_str(), &statbuf ) == 0 ) 
+        if (stat(path.c_str(), &statbuf) == 0)
         {
-            if ( S_ISDIR( statbuf.st_mode ) ) 
+            if (S_ISDIR(statbuf.st_mode))
             {
-                return (access( path.c_str(), R_OK | X_OK ) == 0);
-            } else if ( S_ISREG( statbuf.st_mode ) ) 
+                return (access(path.c_str(), R_OK | X_OK) == 0);
+            } else if (S_ISREG(statbuf.st_mode))
             {
-                return (access( path.c_str(), R_OK ) == 0);
-            } else 
+                return (access(path.c_str(), R_OK) == 0);
+            } else
             {
                 return false;
             }
-        } else 
+        } else
         {
             return false;
         }
@@ -60,13 +59,14 @@ struct view_icon_texture_t : public wf::custom_data_t
     /* Helper function to get directories to search through, use presets if XDG_DATA_DIRS is missing */
     std::string get_xdg_application_dirs()
     {
-        char* xdg_data_dirs_raw = getenv("XDG_DATA_DIRS");
-        if(xdg_data_dirs_raw == nullptr)
+        char *xdg_data_dirs_raw = getenv("XDG_DATA_DIRS");
+        if (xdg_data_dirs_raw == nullptr)
         {
             /* Fallback for missing XDG */
             std::string home = getenv("HOME");
-            return home+"/.local/share/:/usr/local/share/:/usr/share/";
-        } 
+            return home + "/.local/share/:/usr/local/share/:/usr/share/";
+        }
+
         return xdg_data_dirs_raw;
     }
 
@@ -79,18 +79,19 @@ struct view_icon_texture_t : public wf::custom_data_t
         char delim = ':';
         while (getline(ss, path_prefix, delim))
         {
-            std::string desktop_path = path_prefix+ "/applications/" + appid + ".desktop";
+            std::string desktop_path = path_prefix + "/applications/" + appid + ".desktop";
             if (exists(desktop_path))
             {
-                INIReader desktop( desktop_path );
+                INIReader desktop(desktop_path);
                 std::string icon_name = desktop.Get("Desktop Entry", "Icon", "");
                 std::string icon_path = get_icon_path_from_icon(icon_name);
-                if(icon_path!=""){
+                if (icon_path != "")
+                {
                     return icon_path;
                 }
             }
         }
-        
+
         return "";
     }
 
@@ -101,67 +102,78 @@ struct view_icon_texture_t : public wf::custom_data_t
         {
             return "";
         }
+
         /* Full direct path, use it exclusively */
-        if (icon.substr(0,1) == "/")
+        if (icon.substr(0, 1) == "/")
         {
             return icon;
         }
-        /* TODO Consider mapping icon:icon_path and emptying only if theme changes. */
-        /* Search */
-        std::string versions[] = {"scalable", "128x128", "96x96", "64x64", "48x48", "32x32"};
-        std::string themes[] = {theme_choice, "hicolor", "locolor"};
+
+        /*
+         * TODO Consider mapping icon:icon_path and emptying only if theme changes.
+         * Search
+         */
+        std::string versions[] =
+        {"scalable", "symbolic", "512x512", "256x256", "128x128", "96x96", "64x64", "48x48", "32x32"};
+        std::string themes[]     = {theme_choice, "hicolor", "locolor"};
         std::string extensions[] = {".svg", ".png"};
-        std::string data_dirs = get_xdg_application_dirs();
+        std::string data_dirs    = get_xdg_application_dirs();
         std::string path_prefix;
         char delim = ':';
 
         /* Expend every option in theme before moving along */
-        for(std::string theme : themes)
+        for (std::string theme : themes)
         {
-            for(std::string version: versions)
+            for (std::string version : versions)
             {
-                for(std::string extension: extensions)
+                for (std::string extension : extensions)
                 {
                     std::stringstream ss(data_dirs);
 
                     while (getline(ss, path_prefix, delim))
                     {
-                        std::string icon_path = path_prefix+ "/icons/" + theme+ "/" + version +"/apps/" + icon + extension;
-                        if(exists(icon_path)){
+                        std::string icon_path = path_prefix + "/icons/" + theme + "/" + version + "/apps/" +
+                            icon + extension;
+                        if (exists(icon_path))
+                        {
                             return icon_path;
                         }
                     }
                 }
             }
         }
+
         /* Fallback to loose image */
-        for(std::string extension: extensions)
+        for (std::string extension : extensions)
         {
             std::stringstream ss(data_dirs);
 
             while (getline(ss, path_prefix, delim))
             {
-                std::string icon_path = path_prefix+ "/icons/" + icon + extension;
-                if(exists(icon_path)){
+                std::string icon_path = path_prefix + "/icons/" + icon + extension;
+                if (exists(icon_path))
+                {
                     return icon_path;
                 }
             }
         }
+
         return "";
     }
 
-    cairo_surface_t * get_surface_from_svg(std::string path) const {
-	    auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, icon_size, icon_size);
-	    auto surface_rsvg = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, icon_size, icon_size);
-	    auto cr = cairo_create(surface);
-	    auto cr_rsvg = cairo_create(surface_rsvg);
+    cairo_surface_t *get_surface_from_svg(std::string path) const
+    {
+        auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, icon_size, icon_size);
+        auto surface_rsvg = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, icon_size, icon_size);
+        auto cr = cairo_create(surface);
+        auto cr_rsvg = cairo_create(surface_rsvg);
 
-	    GFile *file = g_file_new_for_path(path.c_str());
-	    RsvgHandle *svg = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE,
-	                                                  NULL, NULL);
-	    RsvgRectangle rect { 0, 0, (double)icon_size, (double)icon_size };
-	    rsvg_handle_render_document(svg, cr_rsvg, &rect, nullptr);
-	    cairo_destroy(cr_rsvg);
+        GFile *file     = g_file_new_for_path(path.c_str());
+        RsvgHandle *svg = rsvg_handle_new_from_gfile_sync(file, RSVG_HANDLE_FLAGS_NONE,
+            NULL, NULL);
+        RsvgRectangle rect{0, 0, (double)icon_size, (double)icon_size};
+        rsvg_handle_render_document(svg, cr_rsvg, &rect, nullptr);
+        cairo_destroy(cr_rsvg);
 
         cairo_translate(cr, (double)icon_size / 2, (double)icon_size / 2);
         cairo_scale(cr, 1.0, 1.0);
@@ -169,22 +181,22 @@ struct view_icon_texture_t : public wf::custom_data_t
 
         cairo_set_source_surface(cr, surface_rsvg, 0, 0);
         cairo_paint(cr);
-	    cairo_surface_destroy(surface_rsvg);
-    
-	    cairo_destroy(cr);
+        cairo_surface_destroy(surface_rsvg);
 
-	    g_object_unref(svg);
-	    g_object_unref(file);
+        cairo_destroy(cr);
 
-	    return surface;
+        g_object_unref(svg);
+        g_object_unref(file);
+
+        return surface;
     }
 
-    cairo_surface_t * get_surface_from_png(std::string path)
+    cairo_surface_t *get_surface_from_png(std::string path)
     {
         auto surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, icon_size, icon_size);
         auto cr = cairo_create(surface);
 
-        auto image = cairo_image_surface_create_from_png(path.c_str());
+        auto image    = cairo_image_surface_create_from_png(path.c_str());
         double width  = cairo_image_surface_get_width(image);
         double height = cairo_image_surface_get_height(image);
 
@@ -197,29 +209,31 @@ struct view_icon_texture_t : public wf::custom_data_t
         cairo_surface_destroy(image);
         cairo_destroy(cr);
 
-        return surface; 
+        return surface;
     }
 
-    cairo_surface_t * get_surface(std::string path)
+    cairo_surface_t *get_surface(std::string path)
     {
         /* Skip if too short */
         if (path.size() <= 4)
         {
             return nullptr;
         }
-        std::string end = path.substr(path.size()-4);
+
+        std::string end = path.substr(path.size() - 4);
         if (end == ".png")
         {
             return get_surface_from_png(path);
         }
+
         if (end == ".svg")
         {
             return get_surface_from_svg(path);
         }
-        LOGE("Could not get surface from file : ",path);
+
+        LOGE("Could not get surface from file : ", path);
         return nullptr;
     }
-
 
     void update_overlay_texture(std::string app_id)
     {
@@ -229,32 +243,34 @@ struct view_icon_texture_t : public wf::custom_data_t
 
     void update_overlay_texture()
     {
-        if (cached_app_id=="")
+        if (cached_app_id == "")
         {
             LOGE("Cached App Id blank");
             return;
         }
+
         auto icon_path = get_icon_path_for_appid(cached_app_id);
-        if(icon_path=="")
+        if (icon_path == "")
         {
-            LOGE("Icon Path blank : ",cached_app_id);
+            LOGE("Icon Path blank : ", cached_app_id);
             return;
         }
+
         auto surface = get_surface(icon_path);
-        if(surface==nullptr)
+        if (surface == nullptr)
         {
-            LOGE("Error getting surface : ",icon_path);
+            LOGE("Error getting surface : ", icon_path);
             return;
         }
+
         button_texture = wf::owned_texture_t{surface};
         cairo_surface_destroy(surface);
     }
 
-
     wf::signal::connection_t<wf::view_app_id_changed_signal> view_changed_icon =
         [=] (wf::view_app_id_changed_signal *ev)
     {
-        LOGI("Got app id : ",ev->view->get_app_id());
+        LOGI("Got app id : ", ev->view->get_app_id());
         update_overlay_texture(ev->view->get_app_id());
     };
 
@@ -325,13 +341,12 @@ class touchswitch_icon_overlay_node_t : public node_t
         return v->get_bounding_box();
     }
 
-    
     /**
      * Check if this view should display an overlay.
      */
     bool should_have_overlay()
     {
-        if (! this->parent.show_view_icon_overlay)
+        if (!this->parent.show_view_icon_overlay)
         {
             return false;
         }
@@ -363,7 +378,7 @@ class touchswitch_icon_overlay_node_t : public node_t
 
         overlay_shown = true;
         wf::dimensions_t box = {icon_size, icon_size};
-        auto output_scale = parent.output->handle->scale;
+        auto output_scale    = parent.output->handle->scale;
 
         auto& tex = get_overlay_texture(find_topmost_parent(view));
 
@@ -404,7 +419,7 @@ class touchswitch_icon_overlay_node_t : public node_t
         node_t(false), view(view_), parent(parent_), pos(pos_)
     {
         auto parent = find_topmost_parent(view);
-        auto& icon = get_overlay_texture(parent);
+        auto& icon  = get_overlay_texture(parent);
 
         idle_update_icon.set_callback([=] () { update_app_id(); });
         idle_update_icon.run_once();
@@ -476,11 +491,12 @@ class touchswitch_icon_overlay_render_instance_t : public render_instance_t
     void render(const wf::scene::render_instruction_t& data) override
     {
         auto& icon = *self->view->get_data<view_icon_texture_t>();
-        if (! icon.button_texture.get_texture())
+        if (!icon.button_texture.get_texture())
         {
             LOGE("Null texture");
             return;
         }
+
         data.pass->add_texture(icon.button_texture.get_texture(), data.target, self->geometry, data.damage);
         self->idle_update_icon.run_once();
     }
@@ -566,12 +582,10 @@ void touchswitch_show_icon_t::init(wf::output_t *output)
     output->connect(&rem_icon_overlay);
     output->connect(&touchswitch_end);
     output->connect(&touchswitch_update);
-
 }
 
 void touchswitch_show_icon_t::fini()
-{
-}
+{}
 
 void touchswitch_show_icon_t::update_icon_overlay_opt()
 {

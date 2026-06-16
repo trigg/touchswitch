@@ -40,6 +40,14 @@
 					<_name>Minimize Window</_name>
 				</desc>
 				<desc>
+					<value>fullscreen</value>
+					<_name>Fullscreen Window</_name>
+				</desc>
+				<desc>
+					<value>maximize</value>
+					<_name>Maximize Window</_name>
+				</desc>
+				<desc>
 					<value>nothing</value>
 					<_name>Nothing</_name>
 				</desc>
@@ -55,6 +63,14 @@
 				<desc>
 					<value>minimize</value>
 					<_name>Minimize Window</_name>
+				</desc>
+				<desc>
+					<value>fullscreen</value>
+					<_name>Fullscreen Window</_name>
+				</desc>
+				<desc>
+					<value>maximize</value>
+					<_name>Maximize Window</_name>
 				</desc>
 				<desc>
 					<value>nothing</value>

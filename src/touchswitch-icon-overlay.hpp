@@ -1,6 +1,5 @@
 #pragma once
 
-#include "wayfire/signal-definitions.hpp"
 #include "wayfire/signal-provider.hpp"
 #include <string>
 
@@ -21,7 +20,6 @@ class touchswitch_icon_overlay_node_t;
 class touchswitch_show_icon_t
 {
   protected:
-    /* Overlays for showing the title of each view */
     wf::option_wrapper_t<bool> show_view_icon_overlay_opt{
         "touchswitch/icon_overlay"};
     wf::option_wrapper_t<std::string> icon_position{"touchswitch/icon_position"};
@@ -35,7 +33,6 @@ class touchswitch_show_icon_t
     void fini();
 
   protected:
-    /* signals */
     wf::signal::connection_t<touchswitch_end_signal> touchswitch_end;
     wf::signal::connection_t<touchswitch_update_signal> touchswitch_update;
     wf::signal::connection_t<touchswitch_transformer_added_signal> add_icon_overlay;

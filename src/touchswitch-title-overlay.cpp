@@ -180,6 +180,7 @@ class touchswitch_overlay_node_t : public node_t
         }
 
         auto old_bbox = get_bounding_box();
+        this->do_push_damage(old_bbox);
 
         overlay_shown = true;
         auto box = find_maximal_title_size();
@@ -226,14 +227,13 @@ class touchswitch_overlay_node_t : public node_t
           case position::BOTTOM:
             geometry.y = bbox.y + bbox.height - geometry.height / 2;
             break;
-        
+
           case position::BELOW:
             geometry.y = bbox.y + bbox.height;
             break;
         }
 
-        this->do_push_damage(old_bbox);
-        this->do_push_damage(get_bounding_box());
+        this->do_push_damage(geometry);
     }
 
   public:
@@ -332,6 +332,7 @@ class touchswitch_overlay_render_instance_t : public render_instance_t
             /* this should not happen */
             return;
         }
+
         data.pass->add_texture(title.overlay.get_texture(), data.target, self->geometry, data.damage,
             tr->alpha);
         self->idle_update_title.run_once();
@@ -349,14 +350,14 @@ void touchswitch_overlay_node_t::gen_render_instances(
 }
 
 touchswitch_show_title_t::touchswitch_show_title_t() :
-    touchswitch_update{[this] (auto)
-    {
-        update_title_overlay_opt();
-    }},
     touchswitch_end{[this] (auto)
     {
         show_view_title_overlay = title_overlay_t::NEVER;
         last_title_overlay = nullptr;
+    }},
+    touchswitch_update{[this] (auto)
+    {
+        update_title_overlay_opt();
     }
 },
 
@@ -425,12 +426,10 @@ void touchswitch_show_title_t::init(wf::output_t *output)
     output->connect(&rem_title_overlay);
     output->connect(&touchswitch_end);
     output->connect(&touchswitch_update);
-
 }
 
 void touchswitch_show_title_t::fini()
-{
-}
+{}
 
 void touchswitch_show_title_t::update_title_overlay_opt()
 {
