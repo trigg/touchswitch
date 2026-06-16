@@ -3,6 +3,7 @@
 #include "touchswitch-edge-overlay.hpp"
 #include "touchswitch-icon-overlay.hpp"
 #include "touchswitch-title-overlay.hpp"
+#include "touchswitch-notice-overlay.hpp"
 #include "wayfire/plugins/touchswitch-signal.hpp"
 #include <limits>
 #include <map>
@@ -107,6 +108,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
 
     std::shared_ptr<wf::scene::touchswitch_edge_overlay_node_t> top_overlay;
     std::shared_ptr<wf::scene::touchswitch_edge_overlay_node_t> bottom_overlay;
+    wf::touchswitch_notice_overlay_t workspace_notice;
 
     touchswitch_show_title_t show_title;
     touchswitch_show_icon_t show_icon;
@@ -171,6 +173,7 @@ class wayfire_touchswitch : public wf::per_output_plugin_instance_t,
     size_t get_current_idx();
     std::vector<wayfire_toplevel_view> get_views();
     bool should_scale_view(wayfire_toplevel_view view);
+    void render_empty_notification_message();
 
     void set_tiled_wobbly(wayfire_toplevel_view v, bool b)
     {}

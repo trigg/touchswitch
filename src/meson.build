@@ -8,6 +8,7 @@ shared_module(
                 'touchswitch-icon-overlay.cpp',
                 'touchswitch-edge-overlay.cpp',
                 'touchswitch-instance.cpp',
+                'touchswitch-notice-overlay.cpp',
         ],
         dependencies: all_deps,
         install: true,

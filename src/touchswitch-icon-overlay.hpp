@@ -41,7 +41,6 @@ class touchswitch_show_icon_t
     friend class wf::scene::touchswitch_icon_overlay_node_t;
 
     bool show_view_icon_overlay;
-    /* only used if title overlay is set to follow the mouse */
 
     void update_icon_overlay_opt();
 };

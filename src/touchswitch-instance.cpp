@@ -18,6 +18,7 @@ void wayfire_touchswitch::init()
         wf::scene::edge_overlay_position::TOP);
     bottom_overlay = std::make_shared<wf::scene::touchswitch_edge_overlay_node_t>(output,
         wf::scene::edge_overlay_position::BOTTOM);
+    workspace_notice.init(output);
 
     auto overlay_layer = output->node_for_layer(wf::scene::layer::OVERLAY);
     if (overlay_layer)
@@ -64,6 +65,8 @@ void wayfire_touchswitch::fini()
     {
         wf::scene::remove_child(bottom_overlay);
     }
+
+    workspace_notice.hide();
 
     show_title.fini();
     show_icon.fini();
@@ -184,6 +187,11 @@ void wayfire_touchswitch::process_input(uint32_t button, uint32_t state, wf::poi
         set_hook();
         layout_slots(get_views());
         return;
+    }
+
+    if (workspace_notice.is_active())
+    {
+        deactivate();
     }
 
     if (last_selected_view != nullptr)
@@ -479,6 +487,7 @@ void wayfire_touchswitch::remove_view(wayfire_toplevel_view view)
 
 void wayfire_touchswitch::handle_new_view(wayfire_toplevel_view view)
 {
+    workspace_notice.hide();
     if (should_scale_view(view))
     {
         layout_slots(get_views());
@@ -500,24 +509,28 @@ bool wayfire_touchswitch::activate()
     auto views = get_views();
     if (views.empty())
     {
-        output->deactivate_plugin(&grab_interface);
-        return false;
+        workspace_notice.show();
+        touch_x_offset = 0.0;
+    } else
+    {
+        workspace_notice.hide();
+        auto active_view = wf::toplevel_cast(wf::get_active_view_for_output(output));
+        touch_x_offset = active_view ? static_cast<double>(get_view_index(active_view)) : 0.0;
+
+        for (auto& view : views)
+        {
+            if (!view->minimized)
+            {
+                add_transformer(view);
+            }
+        }
     }
 
     touch_held = false;
-    swipe_direction = swipe_direction_option::UNDECIDED;
-    auto active_view = toplevel_cast(wf::get_active_view_for_output(output));
-    touch_x_offset     = active_view ? static_cast<double>(get_view_index(active_view)) : 0.0;
+    swipe_direction    = swipe_direction_option::UNDECIDED;
     last_selected_view = nullptr;
     grab->grab_input(wf::scene::layer::WORKSPACE);
     active = true;
-    for (auto& view : views)
-    {
-        if (!view->minimized)
-        {
-            add_transformer(view);
-        }
-    }
 
     layout_slots(views);
     output->connect(&on_view_mapped);
@@ -584,11 +597,10 @@ void wayfire_touchswitch::layout_slots(std::vector<wayfire_toplevel_view> views)
 
     if (views.empty())
     {
-        if (active)
-        {
-            deactivate();
-        }
+        workspace_notice.show();
+        set_hook();
 
+        render_empty_notification_message();
         return;
     }
 
@@ -699,10 +711,13 @@ void wayfire_touchswitch::handle_view_unmapped(wayfire_toplevel_view view)
     }
 
     remove_view(view);
-    if (scale_data.empty())
+    auto remaining_views = this->get_views();
+    if (remaining_views.empty())
     {
-        finalize();
-    } else if (!view->parent)
+        render_empty_notification_message();
+    }
+
+    if (!scale_data.empty() && !view->parent)
     {
         auto views     = get_views();
         double max_idx = views.empty() ? 0.0 : static_cast<double>(views.size() - 1);
@@ -734,6 +749,7 @@ void wayfire_touchswitch::deactivate()
     auto view = get_current_view();
     active = false;
     is_snapping = false;
+    workspace_notice.hide();
 
     set_hook();
     on_view_mapped.disconnect();
@@ -914,11 +930,6 @@ void wayfire_touchswitch::on_workarea_changed_event(wf::workarea_changed_signal 
 void wayfire_touchswitch::on_view_geometry_changed_event(wf::view_geometry_changed_signal *ev)
 {
     auto views = this->get_views();
-    if (views.empty())
-    {
-        this->deactivate();
-        return;
-    }
 
     this->layout_slots(std::move(views));
 }
@@ -1043,4 +1054,14 @@ void wayfire_touchswitch::check_focus_view(wayfire_toplevel_view view)
     {
         last_selected_view = nullptr;
     }
+}
+
+void wayfire_touchswitch::render_empty_notification_message()
+{
+    if (!active || workspace_notice.is_active())
+    {
+        return;
+    }
+
+    workspace_notice.show();
 }

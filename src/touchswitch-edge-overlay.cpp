@@ -182,21 +182,6 @@ std::string touchswitch_edge_overlay_node_t::get_icon_name_for_action(const std:
         return "window-minimize";
     }
 
-    if (action == "toggle_maximize")
-    {
-        return "window-maximize";
-    }
-
-    if (action == "toggle_fullscreen")
-    {
-        return "view-fullscreen";
-    }
-
-    if (action == "sticky")
-    {
-        return "pin";
-    }
-
     return "";
 }
 
@@ -266,12 +251,21 @@ void touchswitch_edge_overlay_node_t::update_icon()
     if (is_active)
     {
         /* I have an icon and I want to paint it red */
+        int width  = cairo_image_surface_get_width(surface);
+        int height = cairo_image_surface_get_height(surface);
+        /* Render a colour, shaped like the icon */
+        cairo_surface_t *mask_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+        cairo_t *mask_cr = cairo_create(mask_surface);
+        cairo_set_source_surface(mask_cr, surface, 0, 0);
+        cairo_paint(mask_cr);
+        cairo_destroy(mask_cr);
         auto cr = cairo_create(surface);
-
-        cairo_set_operator(cr, CAIRO_OPERATOR_IN);
-        cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 1.0);
+        cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
         cairo_paint(cr);
-
+        cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+        cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 1.0);
+        cairo_mask_surface(cr, mask_surface, 0, 0);
+        cairo_surface_destroy(mask_surface);
         cairo_destroy(cr);
         /* This is probably a stupid way to do this, PRs welcome */
     }
