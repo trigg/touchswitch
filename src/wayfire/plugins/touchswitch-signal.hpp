@@ -3,10 +3,9 @@
 #ifndef TOUCHSWITCH_SIGNALS_H
 #define TOUCHSWITCH_SIGNALS_H
 
+#include <wayfire/core.hpp>
 #include <wayfire/object.hpp>
 #include <wayfire/view.hpp>
-#include <vector>
-#include <algorithm>
 
 /**
  * name: touchswitch-end
